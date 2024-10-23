@@ -45,7 +45,7 @@ authRouter.patch(
   "/verify-email",
   verifyEmailValidator,
   checkValidationErrors,
-  verifyEmail,
+  verifyEmail
 );
 authRouter.post("/refresh-token", refreshToken);
 authRouter.post("/logout", logout);
