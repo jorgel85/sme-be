@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import {
   createUser,
@@ -13,6 +14,8 @@ import {
   findFirstToken,
 } from "../services/token.service";
 import { sendEmail } from "../utils/email";
+import { createResetPasswordLink } from "../utils/utils";
+import { resetPasswordEmail } from "../utils/emailTemplate";
 
 const refreshTokenCookieOptions = {
   httpOnly: process.env.NODE_ENV === "production" ? true : false,
@@ -28,9 +31,9 @@ export const addUser = async (req: Request, res: Response): Promise<void> => {
     const { username, email, phoneNumber, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    const verificationCode = Math.floor(
-      100000 + Math.random() * 900000
-    ).toString(10);
+    const verificationCode = Math.floor(1000 + Math.random() * 9000).toString(
+      10
+    );
     const verificationCodeExp = (
       new Date().getTime() +
       10 * 60 * 1000
@@ -270,12 +273,12 @@ export const sendVerificationCode = async (req: Request, res: Response) => {
       return;
     }
 
-    const verificationCode = Math.floor(
-      100000 + Math.random() * 900000
-    ).toString(10);
+    const verificationCode = Math.floor(1000 + Math.random() * 9000).toString(
+      10
+    );
     const verificationCodeExp = (
       new Date().getTime() +
-      10 * 60 * 1000
+      120 * 60 * 1000
     ).toString(10);
 
     await updateUser(
@@ -299,11 +302,54 @@ export const sendVerificationCode = async (req: Request, res: Response) => {
 };
 
 // Path: controller/auth.controller.js
+// Desc: Send a unique link to user's email address to reset password
+// Route: POST /api/auth/forgot-password
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    const user = await findUniqueUser({ email: email.toLowerCase() });
+    if (!user) {
+      res.status(404).json({ message: "Unregistered email address." });
+      return;
+    }
+
+    const resetPasswordToken = crypto.randomBytes(50).toString("hex");
+    const resetPasswordTokenExp = (
+      new Date().getTime() +
+      120 * 60 * 1000
+    ).toString(10);
+
+    await updateUser(
+      { email },
+      {
+        resetPasswordToken,
+        resetPasswordTokenExp,
+      }
+    );
+
+    const resetPasswordLink = createResetPasswordLink(
+      "https://www.synthesise.me",
+      resetPasswordToken,
+      email
+    );
+    await sendEmail(email, "Password reset", resetPasswordEmail(user.username, resetPasswordLink));
+
+    res
+      .status(200)
+      .json({ message: "Reset password link has been sent successfully!" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal Server Error." });
+  }
+};
+
+// Path: controller/auth.controller.js
 // Desc: Reset password
 // Route: PATCH /api/auth/reset-password
 export const resetPassword = async (req: Request, res: Response) => {
   try {
-    const { email, newPassword, verificationCode } = req.body;
+    const { email, newPassword, resetPasswordToken } = req.body;
 
     const user = await findUniqueUser({ email: email.toLowerCase() });
     if (!user) {
@@ -312,13 +358,13 @@ export const resetPassword = async (req: Request, res: Response) => {
     }
 
     if (
-      verificationCode !== user.verificationCode ||
-      (user.verificationCodeExp !== null &&
-        parseInt(user.verificationCodeExp, 10) < new Date().getTime())
+      resetPasswordToken !== user.resetPasswordToken ||
+      (user.resetPasswordTokenExp !== null &&
+        parseInt(user.resetPasswordTokenExp, 10) < new Date().getTime())
     ) {
       res
         .status(400)
-        .json({ message: "Invalid verification code or code has expired." });
+        .json({ message: "Invalid or expired reset password token." });
       return;
     }
 
@@ -332,9 +378,7 @@ export const resetPassword = async (req: Request, res: Response) => {
       }
     );
 
-    res
-      .status(200)
-      .json({ message: "Password has been reset successfully!" });
+    res.status(200).json({ message: "Password has been reset successfully!" });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Internal Server Error." });
@@ -370,14 +414,9 @@ export const verifyEmail = async (req: Request, res: Response) => {
       return;
     }
 
-    await updateUser(
-      { email },
-      { verified: true }
-    );
+    await updateUser({ email }, { verified: true });
 
-    res
-      .status(200)
-      .json({ message: "Email has been verified successfully!" });
+    res.status(200).json({ message: "Email has been verified successfully!" });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Internal Server Error." });

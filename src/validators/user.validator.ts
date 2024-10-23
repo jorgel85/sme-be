@@ -39,12 +39,19 @@ const loginUserValidator = [
   body("password")
     .not()
     .isEmpty()
-    .withMessage("Password is required")
-    .isLength({ min: 8 })
-    .withMessage("Password must be at least 8 characters long"),
+    .withMessage("Password is required"),
 ];
 
 const sendVerificationCodeValidator = [
+  body("email")
+    .not()
+    .isEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Email must be valid"),
+];
+
+const forgotPasswordValidator = [
   body("email")
     .not()
     .isEmpty()
@@ -68,10 +75,10 @@ const resetPasswordValidator = [
     .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters long"),
 
-  body("verificationCode")
+  body("resetPasswordToken")
     .not()
     .isEmpty()
-    .withMessage("VerificationCode is required"),
+    .withMessage("Reset password token is required"),
 ];
 
 const verifyEmailValidator = [
@@ -92,6 +99,7 @@ export {
   addUserValidator,
   loginUserValidator,
   sendVerificationCodeValidator,
+  forgotPasswordValidator,
   resetPasswordValidator,
   verifyEmailValidator,
 };

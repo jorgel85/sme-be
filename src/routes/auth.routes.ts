@@ -6,9 +6,11 @@ import {
   sendVerificationCodeValidator,
   resetPasswordValidator,
   verifyEmailValidator,
+  forgotPasswordValidator,
 } from "../validators/user.validator";
 import {
   addUser,
+  forgotPassword,
   loginUser,
   logout,
   refreshToken,
@@ -26,6 +28,12 @@ authRouter.post(
   sendVerificationCodeValidator,
   checkValidationErrors,
   sendVerificationCode
+);
+authRouter.post(
+  "/forgot-password",
+  forgotPasswordValidator,
+  checkValidationErrors,
+  forgotPassword
 );
 authRouter.patch(
   "/reset-password",
