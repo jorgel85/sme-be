@@ -333,7 +333,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
       resetPasswordToken,
       email
     );
-    await sendEmail(email, "Password reset", resetPasswordEmail(user.username, resetPasswordLink));
+    await sendEmail(email, "Password reset", resetPasswordEmail(user.username, resetPasswordLink), "");
 
     res
       .status(200)

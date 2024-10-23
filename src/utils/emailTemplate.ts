@@ -23,7 +23,7 @@ const resetPasswordEmail = (name: string, resetPsswordLink: string) => `
         <p style="color: #BFBEBD; font-size: 16px;">Here are your password reset instructions.</p>
         <p style="color: black; font-size: 16px; margin: 20px 20px;">We've received your request to reset your password for Synthesise.Me . To proceed, please enter the following link to go to the password recovery form.</p>
         <div style="text-align: center;">
-          <a href="${resetPsswordLink}" style="padding: 10px 20px; color: #fff; margin-bottom: 20px;">${resetPsswordLink}</a>
+          <a href="${resetPsswordLink}" style="padding: 10px 20px; color: black; margin-bottom: 20px;">${resetPsswordLink}</a>
         </div>
         <p style="color: black; font-size: 16px;">
           <span>Please note:</span><br/>
